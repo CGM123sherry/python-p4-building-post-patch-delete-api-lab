@@ -45,5 +45,71 @@ def most_expensive_baked_good():
     most_expensive_serialized = most_expensive.to_dict()
     return make_response( most_expensive_serialized,   200  )
 
+
+# Route to create a new baked good
+@app.route('/baked_goods', methods=['POST'])
+def create_baked_good():
+    # Retrieve form data from the request
+    name = request.form.get('name')
+    price = request.form.get('price')
+    bakery_id = request.form.get('bakery_id')
+
+    # Create a new baked good
+    new_baked_good = BakedGood(name=name, price=price, bakery_id=bakery_id)
+
+    # Add to the database and commit
+    db.session.add(new_baked_good)
+    db.session.commit()
+
+    # Return the new baked good as JSON
+    return jsonify({
+        'id': new_baked_good.id,
+        'name': new_baked_good.name,
+        'price': new_baked_good.price,
+        'bakery_id': new_baked_good.bakery_id
+    }), 201
+
+
+# Route to update the name of a bakery
+@app.route('/bakeries/<int:id>', methods=['PATCH'])
+def update_bakery(id):
+    # Find the bakery by ID
+    bakery = Bakery.query.get(id)
+    if not bakery:
+        return jsonify({'error': 'Bakery not found'}), 404
+
+    # Update the bakery's name from the form data
+    name = request.form.get('name')
+    if name:
+        bakery.name = name
+
+    # Save changes to the database
+    db.session.commit()
+
+    # Return the updated bakery as JSON
+    return jsonify({
+        'id': bakery.id,
+        'name': bakery.name
+    }), 200
+
+
+# Route to delete a baked good
+@app.route('/baked_goods/<int:id>', methods=['DELETE'])
+def delete_baked_good(id):
+    # Find the baked good by ID
+    baked_good = BakedGood.query.get(id)
+    if not baked_good:
+        return jsonify({'error': 'Baked good not found'}), 404
+
+    # Delete the baked good from the database
+    db.session.delete(baked_good)
+    db.session.commit()
+
+    # Return a confirmation message
+    return jsonify({'message': f'Baked good with id {id} was successfully deleted'}), 200
+
+
+
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
